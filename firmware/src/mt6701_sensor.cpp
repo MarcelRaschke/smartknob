@@ -51,7 +51,13 @@ void MT6701Sensor::init() {
       .quadhd_io_num = -1,
       .max_transfer_sz = 1000,
   };
-  esp_err_t ret = spi_bus_initialize(HSPI_HOST, &tx_bus_config, 1);
+  
+  #ifdef CONFIG_IDF_TARGET_ESP32S3
+    esp_err_t ret = spi_bus_initialize(SPI3_HOST, &tx_bus_config, SPI_DMA_CH_AUTO);
+  #else
+    esp_err_t ret = spi_bus_initialize(HSPI_HOST, &tx_bus_config, 1);
+  #endif
+  
   ESP_ERROR_CHECK(ret);
 
   spi_device_interface_config_t tx_device_config = {
@@ -70,7 +76,12 @@ void MT6701Sensor::init() {
       .pre_cb=NULL,
       .post_cb=NULL,
   };
-  ret=spi_bus_add_device(HSPI_HOST, &tx_device_config, &spi_device_);
+  #ifdef CONFIG_IDF_TARGET_ESP32S3
+    ret=spi_bus_add_device(SPI3_HOST, &tx_device_config, &spi_device_);
+  #else
+    ret=spi_bus_add_device(HSPI_HOST, &tx_device_config, &spi_device_);
+  #endif
+  
   ESP_ERROR_CHECK(ret);
 
 
@@ -105,7 +116,11 @@ float MT6701Sensor::getSensorAngle() {
         x_ = new_x * ALPHA + x_ * (1-ALPHA);
         y_ = new_y * ALPHA + y_ * (1-ALPHA);
       } else {
-        Serial.printf("Bad CRC. expected %d, actual %d\n", calculated_crc, received_crc);
+        error_ = {
+          .error = true,
+          .received_crc = received_crc,
+          .calculated_crc = calculated_crc,
+        };
       }
 
       last_update_ = now;
@@ -115,6 +130,12 @@ float MT6701Sensor::getSensorAngle() {
         rad += 2*PI;
     }
     return rad;
+}
+
+MT6701Error MT6701Sensor::getAndClearError() {
+  MT6701Error out = error_;
+  error_ = {};
+  return out;
 }
 
 #endif

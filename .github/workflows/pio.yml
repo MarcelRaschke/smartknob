@@ -2,7 +2,19 @@ name: PlatformIO CI
 
 on:
   push:
+    paths:
+      - 'firmware/**'
+      - 'proto/**'
+      - 'thirdparty/nanopb/**'
+      - 'platformio.ini'
+      - '.github/workflows/pio.yml'
   pull_request:
+    paths:
+      - 'firmware/**'
+      - 'proto/**'
+      - 'thirdparty/nanopb/**'
+      - 'platformio.ini'
+      - '.github/workflows/pio.yml'
 
 jobs:
   pio-build:
@@ -39,12 +51,19 @@ jobs:
       # Run regardless of other build step failures, as long as setup steps completed
       if: always() && steps.pio_install.outcome == 'success'
       run: |
-        pio run -d ./firmware \
-          -e view \
+        pio run \
+          -e view
 
-    - name: Build Firmware (handheld_tdisplay)
+    - name: Build Firmware (nanofoc)
       # Run regardless of other build step failures, as long as setup steps completed
       if: always() && steps.pio_install.outcome == 'success'
       run: |
-        pio run -d ./firmware \
-          -e handheld_tdisplay \
+        pio run \
+          -e nanofoc
+
+    - name: Build Firmware (brushknight_esp32s3)
+      # Run regardless of other build step failures, as long as setup steps completed
+      if: always() && steps.pio_install.outcome == 'success'
+      run: |
+        pio run \
+          -e brushknight_esp32s3
